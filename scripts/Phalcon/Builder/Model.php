@@ -217,7 +217,6 @@ class Model extends Component
             throw new BuilderException(sprintf('Table "%s" does not exist.', $table));
         }
         $fields = $db->describeColumns($table, $schema);
-
         foreach ($db->listTables() as $tableName) {
             foreach ($db->describeReferences($tableName, $schema) as $reference) {
                 if ($reference->getReferencedTable() != $this->options->get('name')) {
@@ -432,13 +431,17 @@ class Model extends Component
         $attributes = array();
         $setters = array();
         $getters = array();
+        $comments = $this->getComments($db,$table);
+        
         foreach ($fields as $field) {
+            $fieldName = $field->getName();
+            $fieldComment = $comments[$fieldName];
             if (array_key_exists(strtolower($field->getName()), $exclude)) {
                 continue;
             }
             $type = $this->getPHPType($field->getType());
             if ($useSettersGetters) {
-                $attributes[] = $this->snippet->getAttributes($type, 'protected', $field->getName());
+                $attributes[] = $this->snippet->getAttributes($type, 'protected', $field->getName(), $field->isNotNull(), $fieldComment);
                 $setterName = Utils::camelize($field->getName());
                 $setters[] = $this->snippet->getSetter($field->getName(), $type, $setterName);
 
@@ -448,7 +451,7 @@ class Model extends Component
                     $getters[] = $this->snippet->getGetter($field->getName(), $type, $setterName);
                 }
             } else {
-                $attributes[] = $this->snippet->getAttributes($type, 'public', $field->getName());
+                $attributes[] = $this->snippet->getAttributes($type, 'public', $field->getName(), $field->isNotNull(), $fieldComment);
             }
         }
 
@@ -521,4 +524,23 @@ class Model extends Component
             $this->_notifySuccess(sprintf($msgSuccess, Utils::camelize($this->options->get('name'))));
         }
     }
+
+
+    /**
+     * Returns the comments of all fields
+     *
+     * @param  resource $db
+     * @param  string $table
+     * @return string $table
+     */
+    function getComments($db, $table){
+        $fields = $db->fetchAll("show full columns from {$table} ");
+       
+        $comments = [];
+        foreach ($fields as $key => $field) {
+            $comments[$field['Field']] = $field['Comment'];
+        }
+        return $comments;
+    }
+    
 }

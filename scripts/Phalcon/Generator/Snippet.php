@@ -157,17 +157,29 @@ EOD;
         return $templateValidationFailed;
     }
 
-    public function getAttributes($type, $visibility, $fieldName)
+    public function getAttributes($type, $visibility, $fieldName, $isNull, $fieldComment)
     {
         $templateAttributes = <<<EOD
     /**
-     *
+     * %s
+     * 
      * @var %s
+     * @Column(type="%s",nullable="%s")
      */
     %s \$%s;
 EOD;
+        
 
-        return PHP_EOL.sprintf($templateAttributes, $type, $visibility, $fieldName).PHP_EOL;
+        $tmp = explode("_", $fieldName);
+            if(count($tmp)>1) {
+              foreach ($tmp as $key=>$value) {
+                if($key>0) 
+                  $tmp[$key] = ucwords($value);
+              }
+        }
+        $fieldName = implode("", $tmp);
+        $nullable = $isNull ? "true" : "false";
+        return PHP_EOL.sprintf($templateAttributes, $fieldComment, $type, $type, $nullable, $visibility, $fieldName).PHP_EOL;
     }
 
     public function getGetterMap($fieldName, $type, $setterName, $typeMap)
@@ -307,7 +319,14 @@ EOD;
         $contents = array();
         foreach ($fields as $field) {
             $name = $field->getName();
-            $contents[] = sprintf('\'%s\' => \'%s\'', $name, $name);
+            $tmp = explode("_", $name);
+            if(count($tmp)>1) {
+              foreach ($tmp as $key=>$value) {
+                if($key>0) 
+                  $tmp[$key] = ucwords($value);
+              }
+            }
+            $contents[] = sprintf('\'%s\' => \'%s\'', $name, implode('', $tmp));
         }
 
         return PHP_EOL.sprintf($template, join(",\n            ", $contents)).PHP_EOL;
