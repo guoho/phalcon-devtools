@@ -164,12 +164,11 @@ EOD;
      * %s
      * 
      * @var %s
-     * @Column(type="%s",nullable="%s")
+     * @Column(type="%s",nullable="%s",column="%s")
      */
     %s \$%s;
 EOD;
-        
-
+        $originFieldName = $fieldName;
         $tmp = explode("_", $fieldName);
             if(count($tmp)>1) {
               foreach ($tmp as $key=>$value) {
@@ -179,7 +178,7 @@ EOD;
         }
         $fieldName = implode("", $tmp);
         $nullable = $isNull ? "true" : "false";
-        return PHP_EOL.sprintf($templateAttributes, $fieldComment, $type, $type, $nullable, $visibility, $fieldName).PHP_EOL;
+        return PHP_EOL.sprintf($templateAttributes, $fieldComment, $type, $type, $nullable,$originFieldName, $visibility, $fieldName).PHP_EOL;
     }
 
     public function getGetterMap($fieldName, $type, $setterName, $typeMap)
